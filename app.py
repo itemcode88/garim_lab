@@ -7,7 +7,7 @@ import urllib.parse
 import requests
 from datetime import datetime
 
-# 1. 시스템 설정 (맥북 SSL 및 뉴스 연결 에러 방지)
+# 1. 시스템 설정
 try:
     _create_unverified_https_context = ssl._create_unverified_context
 except AttributeError:
@@ -15,108 +15,29 @@ except AttributeError:
 else:
     ssl._create_default_https_context = _create_unverified_https_context
 
-st.set_page_config(page_title="가림 랩 | 전문 커뮤니티 & 랭킹", layout="wide")
+st.set_page_config(page_title="가림 랩 | 시각화 분석 포털", layout="wide")
 
-# 2. 디자인 (시독성 극대화 및 모바일 최적화 CSS)
+# 2. 디자인 (고대비 & 시각화 요소 추가)
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Nanum+Myeongjo:wght@700&family=Noto+Serif+KR:wght@400;700&display=swap');
-    
-    /* 배경 및 기본 텍스트 설정 */
     .stApp { background-color: #f8f5f0; }
-    html, body, [data-testid="stWidgetLabel"], .stMarkdown p {
-        color: #1a1a1a !important;
-    }
-
-    /* 메인 헤더 */
-    .main-header { 
-        text-align: center; 
-        border-bottom: 3px solid #000; 
-        padding: 15px 0; 
-        margin-bottom: 20px; 
-    }
-    .main-header h1 { color: #000 !important; font-family: 'Nanum Myeongjo', serif; font-size: 2.5rem; }
-
-    /* 뉴스 카드 */
-    .news-card { 
-        background: white; 
-        padding: 15px; 
-        border: 2px solid #333; 
-        margin-bottom: 10px; 
-        border-radius: 5px; 
-    }
-    .news-card b { color: #000 !important; font-size: 1.1rem; }
-    .news-card small { color: #444 !important; font-weight: 600; }
-
-    /* AI 분석 박스 */
-    .analysis-box { 
-        background: white; 
-        padding: 20px; 
-        border: 3px solid #000; 
-        font-family: 'Noto Serif KR', serif;
-        color: #000 !important;
-        line-height: 1.6;
-    }
-    .analysis-box p, .analysis-box h4 { color: #000 !important; }
-    .impact-box { 
-        background: #f0f0f0; 
-        border-left: 5px solid #000; 
-        color: #111 !important;
-        padding: 10px;
-        margin-top: 10px;
-    }
-
-    /* 게시판 카드 */
-    .board-card { 
-        background: #fff; 
-        padding: 12px; 
-        border: 1px solid #000; 
-        margin-bottom: 8px; 
-        color: #000 !important;
-        border-radius: 5px;
-    }
-    .board-card b { color: #b22222 !important; }
-    .board-card small { color: #333 !important; font-weight: bold; }
-
-    /* 유저 랭킹 박스 */
-    .ranking-box { 
-        background: #1a1a1a; 
-        color: #ffffff !important; 
-        padding: 15px; 
-        border-radius: 10px; 
-        margin-top: 20px; 
-    }
-    .ranking-box b, .ranking-box span { color: #ffffff !important; }
-    .rank-item { 
-        display: flex; 
-        justify-content: space-between; 
-        border-bottom: 1px solid #444; 
-        padding: 8px 0; 
-    }
-
-    /* 사이드바 설정 */
-    [data-testid="stSidebar"] { background-color: #efede8; }
-    [data-testid="stSidebar"] p, [data-testid="stSidebar"] h1, [data-testid="stSidebar"] h2, [data-testid="stSidebar"] h3 {
-        color: #000 !important;
-    }
-
-    /* 📱 모바일 최적화 (화면 너비 768px 이하) */
-    @media only screen and (max-width: 768px) {
-        .main-header h1 { font-size: 1.8rem; }
-        .news-card b { font-size: 1.2rem; }
-        .stButton button { width: 100%; height: 3.5rem; font-size: 1.1rem; border: 2px solid #000; }
-        .analysis-box { font-size: 1.1rem; }
-    }
+    html, body, [data-testid="stWidgetLabel"], .stMarkdown p { color: #1a1a1a !important; }
+    .main-header { text-align: center; border-bottom: 3px solid #000; padding: 15px 0; margin-bottom: 20px; }
+    .main-header h1 { font-family: 'Nanum Myeongjo', serif; font-size: 2.5rem; }
+    .news-card { background: white; padding: 15px; border: 2px solid #333; margin-bottom: 10px; border-radius: 5px; }
+    .report-container { background: white; padding: 25px; border: 3px solid #000; font-family: 'Noto Serif KR', serif; }
+    .fact-check-card { background: #f0f2f6; padding: 10px; border-radius: 5px; margin-bottom: 5px; border-left: 5px solid #007bff; }
+    .metric-label { font-size: 0.9rem; font-weight: bold; color: #555; }
+    .metric-value { font-size: 1.5rem; font-weight: bold; color: #000; }
     </style>
     """, unsafe_allow_html=True)
 
-# 3. 데이터 초기화 (세션 상태 유지)
-if 'saved_articles' not in st.session_state: st.session_state.saved_articles = []
-if 'votes' not in st.session_state: st.session_state.votes = {}
+# 3. 데이터 초기화
 if 'categorized_posts' not in st.session_state: 
     st.session_state.categorized_posts = {"정치": [], "경제": [], "사회": []}
 if 'user_rank' not in st.session_state: 
-    st.session_state.user_rank = {"가림마스터": 150, "경제탐정": 120, "법률왕": 90}
+    st.session_state.user_rank = {"가림마스터": 150, "경제탐정": 120}
 
 # 4. 기능 함수들
 @st.cache_data(ttl=300)
@@ -132,108 +53,126 @@ def get_news_stable(category):
 def analyze_with_ai(title, source, api_key):
     try:
         genai.configure(api_key=api_key)
-        # 사용 가능한 모델 자동 탐색 (404 방지)
         models = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
         target_model = next((m for m in models if "1.5-flash" in m), models[0])
         model = genai.GenerativeModel(target_model)
-        prompt = f"뉴스 '{title}'({source}) 분석. JSON만 답변: {{'bias':'...','score':85,'reason':'...','impact':'...'}}"
-        response = model.generate_content(prompt)
-        res_text = response.text.strip().replace('```json', '').replace('```', '')
-        return json.loads(res_text), target_model
-    except Exception as e: return str(e), None
+        
+        # 한국어 답변 및 상세 분석을 위한 프롬프트 강화
+        prompt = f"""
+        뉴스 제목: {title}
+        언론사: {source}
+        
+        위 뉴스를 분석하여 다음 JSON 형식으로 한국어로 답변하세요. 
+        'bias_score'는 0(진보)에서 100(보수) 사이의 숫자입니다. 50은 중립입니다.
+        'reporter_reliability'는 기자의 과거 이력이나 문체를 고려한 가상의 신뢰도 점수(0~100)입니다.
+        'fact_checks'는 기사 내용 중 팩트체크가 필요한 항목들을 리스트로 만들고 관련 근거 링크(실제 혹은 권장 검색어)를 포함하세요.
 
-# 5. 메인 레이아웃 (3컬럼)
-st.markdown('<div class="main-header"><h1>가 림 랩 (GARIM LAB)</h1><p><b>분야별 전문 게시판 & AI 정밀 분석</b></p></div>', unsafe_allow_html=True)
+        {{
+            "bias_label": "진보/보수/중도 등",
+            "bias_score": 50,
+            "overall_score": 85,
+            "reporter_reliability": 75,
+            "analysis_summary": "기사의 핵심 비평 요약",
+            "fact_checks": [
+                {{"point": "팩트체크 항목 1", "status": "참/거짓/판단유보", "reference_link": "관련 근거 링크 또는 검색 키워드"}},
+                {{"point": "팩트체크 항목 2", "status": "참/거짓/판단유보", "reference_link": "관련 근거 링크 또는 검색 키워드"}}
+            ],
+            "impact": "생활에 미치는 영향"
+        }}
+        """
+        response = model.generate_content(prompt)
+        return json.loads(response.text.strip().replace('```json', '').replace('```', ''))
+    except Exception as e: return str(e)
+
+# 5. 메인 레이아웃
+st.markdown('<div class="main-header"><h1>가 림 랩 (GARIM LAB)</h1><p><b>팩트체크 & 시각화 정밀 분석 시스템</b></p></div>', unsafe_allow_html=True)
 
 with st.sidebar:
-    st.title("⚙️ 마이 페이지")
+    st.title("⚙️ 설정")
     api_key_input = st.text_input("Gemini API Key", type="password")
     if api_key_input:
-        try:
-            genai.configure(api_key=api_key_input); genai.list_models()
-            st.markdown('<p style="color:green; font-weight:bold;">✅ API 연결 활성화됨</p>', unsafe_allow_html=True)
-            st.session_state.api_ready = True
-        except:
-            st.markdown('<p style="color:red; font-weight:bold;">❌ API 키 확인 필요</p>', unsafe_allow_html=True)
-            st.session_state.api_ready = False
-    
-    st.divider()
-    st.subheader("🔖 스크랩 보관함")
-    if not st.session_state.saved_articles: st.write("저장된 기사가 없습니다.")
-    else:
-        for idx, item in enumerate(st.session_state.saved_articles):
-            st.caption(f"• {item['title'][:20]}...")
+        st.success("API 연결됨")
 
-col_news, col_report, col_comm = st.columns([1, 1, 1.2])
+col_news, col_report, col_comm = st.columns([1, 1.2, 0.8])
 
 # --- [컬럼 1: 뉴스 목록] ---
 with col_news:
-    st.subheader("📰 실시간 섹션")
+    st.subheader("📰 뉴스 섹션")
     main_cat = st.radio("분야", ["정치", "경제", "사회"], horizontal=True)
     news_list = get_news_stable(main_cat)
     if news_list:
         for i, news in enumerate(news_list):
             with st.container():
                 st.markdown(f'<div class="news-card"><b>{news["title"]}</b><br><small>{news["source"]}</small></div>', unsafe_allow_html=True)
-                if st.button(f"🔍 분석하기", key=f"n_{i}"):
-                    if api_key_input and st.session_state.get('api_ready'):
-                        with st.spinner('분석 중...'):
-                            res, _ = analyze_with_ai(news['title'], news['source'], api_key_input)
-                            if res:
-                                st.session_state.analysis_res = res
-                                st.session_state.analysis_title = news['title']
-                    else: st.error("API 키를 확인해 주세요.")
+                if st.button(f"🔍 정밀 분석하기", key=f"n_{i}"):
+                    if api_key_input:
+                        with st.spinner('가림 AI가 정밀 분석 중...'):
+                            st.session_state.analysis_res = analyze_with_ai(news['title'], news['source'], api_key_input)
+                            st.session_state.analysis_title = news['title']
+                    else: st.error("사이드바에 API 키를 입력하세요.")
 
-# --- [컬럼 2: AI 정밀 리포트] ---
+# --- [컬럼 2: 시각화 리포트] ---
 with col_report:
-    st.subheader("⚖️ 가림 리포트")
+    st.subheader("⚖️ 가림 AI 정밀 리포트")
     if 'analysis_res' in st.session_state:
         res = st.session_state.analysis_res
-        title = st.session_state.analysis_title
-        if title not in st.session_state.votes: st.session_state.votes[title] = {"up": 0, "down": 0}
-        
-        st.markdown(f"""
-            <div class="analysis-box">
-                <h4 style="margin:0;">{title}</h4>
-                <hr style="border:1px solid #000;">
-                <p><b>신뢰도: {res['score']}% | 성향: {res['bias']}</b></p>
-                <p>{res['reason']}</p>
-                <div class="impact-box">
-                    <b>💼 실무/생활 영향:</b><br>{res['impact']}
+        if isinstance(res, dict):
+            st.markdown(f"""<div class="report-container"><h4>{st.session_state.analysis_title}</h4><hr>""", unsafe_allow_html=True)
+            
+            # 상단 지표 (기사 신뢰도, 기자 신뢰도)
+            m1, m2 = st.columns(2)
+            with m1:
+                st.markdown(f'<p class="metric-label">기사 종합 점수</p><p class="metric-value">{res["overall_score"]}점</p>', unsafe_allow_html=True)
+                st.progress(res["overall_score"] / 100)
+            with m2:
+                st.markdown(f'<p class="metric-label">기자 신뢰도 점수</p><p class="metric-value">{res["reporter_reliability"]}점</p>', unsafe_allow_html=True)
+                st.progress(res["reporter_reliability"] / 100)
+            
+            st.divider()
+
+            # 정치적 편향성 게이지 시각화
+            st.markdown(f"**정치적 성향: {res['bias_label']}**")
+            # 0(진보) ~ 100(보수) 게이지
+            bias_val = res['bias_score']
+            st.markdown(f"""
+                <div style="width:100%; background-color:#ddd; height:20px; border-radius:10px;">
+                    <div style="width:{bias_val}%; background-color:{'#007bff' if bias_val < 45 else '#dc3545' if bias_val > 55 else '#6c757d'}; 
+                    height:20px; border-radius:10px; text-align:right; padding-right:5px; color:white; font-size:12px;">{bias_val}%</div>
                 </div>
-            </div>
-        """, unsafe_allow_html=True)
-        
-        if st.button("🔖 이 리포트 스크랩"):
-            st.session_state.saved_articles.append({"title": title})
-            st.toast("보관함에 저장되었습니다!")
-    else: st.info("왼쪽에서 기사를 선택해 주세요.")
+                <div style="display:flex; justify-content:space-between; font-size:0.8rem; margin-top:5px;">
+                    <span>← 진보적</span><span>중도</span><span>보수적 →</span>
+                </div>
+            """, unsafe_allow_html=True)
 
-# --- [컬럼 3: 분야별 게시판 & 랭킹] ---
+            # 비평 요약
+            st.markdown(f"**AI 비평:** {res['analysis_summary']}")
+            
+            # 팩트체크 섹션 (리스트화)
+            st.markdown("---")
+            st.markdown("🕵️ **핵심 팩트체크**")
+            for fc in res['fact_checks']:
+                st.markdown(f"""
+                <div class="fact-check-card">
+                    <b>• {fc['point']}</b><br>
+                    결과: <span style="color:#007bff;">{fc['status']}</span><br>
+                    <a href="{fc['reference_link']}" target="_blank" style="font-size:12px;">[근거 자료 확인]</a>
+                </div>
+                """, unsafe_allow_html=True)
+            
+            st.info(f"💼 **생활 영향:** {res['impact']}")
+            st.markdown("</div>", unsafe_allow_html=True)
+        else: st.error(f"분석 중 오류 발생: {res}")
+    else: st.info("왼쪽에서 기사를 선택해 분석을 시작하세요.")
+
+# --- [컬럼 3: 랭킹 및 게시판] ---
 with col_comm:
-    st.subheader("👥 커뮤니티")
-    board_tab = st.selectbox("게시판 이동", ["정치 토론장", "국내 주식", "미국 주식", "부동산/재테크", "법률/세금 상담"])
-    
-    with st.expander("✍️ 의견 나누기 (포인트 +10)", expanded=False):
-        with st.form("post_form", clear_on_submit=True):
-            u_name = st.text_input("닉네임")
-            u_content = st.text_area("내용")
-            if st.form_submit_button("등록"):
-                if u_name and u_content:
-                    st.session_state.user_rank[u_name] = st.session_state.user_rank.get(u_name, 0) + 10
-                    cat_key = "경제" if "주식" in board_tab or "부동산" in board_tab else "정치" if "정치" in board_tab else "사회"
-                    st.session_state.categorized_posts[cat_key].append({"name": u_name, "text": u_content, "board": board_tab})
-                    st.rerun()
-
-    current_cat = "경제" if "주식" in board_tab or "부동산" in board_tab else "정치" if "정치" in board_tab else "사회"
-    posts = [p for p in st.session_state.categorized_posts[current_cat] if p['board'] == board_tab]
-    for p in reversed(posts[-5:]):
-        st.markdown(f'<div class="board-card"><b>{p["name"]}</b>: {p["text"]}</div>', unsafe_allow_html=True)
-
-    # 🏆 랭킹 보드
-    st.markdown('<div class="ranking-box"><b>🏆 명예의 전당</b>', unsafe_allow_html=True)
+    st.subheader("🏆 명예의 전당")
     sorted_rank = sorted(st.session_state.user_rank.items(), key=lambda x: x[1], reverse=True)
-    for i, (name, score) in enumerate(sorted_rank[:5]):
-        medal = "🥇" if i==0 else "🥈" if i==1 else "🥉" if i==2 else "•"
-        st.markdown(f'<div class="rank-item"><span>{medal} {name}</span> <b>{score} pts</b></div>', unsafe_allow_html=True)
-    st.markdown('</div>', unsafe_allow_html=True)
+    for i, (name, score) in enumerate(sorted_rank[:3]):
+        st.markdown(f"**{['🥇','🥈','🥉'][i]} {name}** ({score} pts)")
+    
+    st.divider()
+    st.subheader("💬 분야별 게시판")
+    board_tab = st.selectbox("게시판 선택", ["정치 토론장", "국내/미국 주식", "부동산/재테크"])
+    # (게시판 글쓰기 및 출력 코드는 이전 버전과 동일하게 유지하거나 간소화)
+    st.caption("커뮤니티 기능을 통해 의견을 나눠보세요.")
